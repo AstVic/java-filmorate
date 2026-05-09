@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
@@ -16,7 +17,7 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        userController = new UserController();
+        userController = new UserController(new InMemoryUserStorage());
     }
 
     @Test
@@ -177,4 +178,24 @@ class UserControllerTest {
 
         assertThrows(ValidationException.class, () -> userController.update(user));
     }
+
+    @Test
+    void shouldDeleteExistingUser() {
+        User user = new User();
+        user.setEmail("mail@mail.ru");
+        user.setLogin("dolore");
+        user.setName("Nick Name");
+        user.setBirthday(LocalDate.of(1946, 8, 20));
+
+        User createdUser = userController.create(user);
+        userController.delete(createdUser.getId());
+
+        assertEquals(0, userController.findAll().size());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeletingNonExistingUser() {
+        assertThrows(ValidationException.class, () -> userController.delete(999L));
+    }
+
 }

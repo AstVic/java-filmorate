@@ -4,19 +4,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
 
-    private final Map<Long, Film> films = new HashMap<>();
+    private final FilmStorage filmStorage;
     private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
+
+    public FilmController(FilmStorage filmStorage) {
+        this.filmStorage = filmStorage;
+    }
 
     @PostMapping
     public Film create(@RequestBody Film film) {
@@ -24,11 +27,10 @@ public class FilmController {
 
         check(film);
 
-        film.setId(getNextId());
-        films.put(film.getId(), film);
+        Film createdFilm = filmStorage.add(film);
 
-        log.info("Фильм успешно создан с id {}: {}", film.getId(), film);
-        return film;
+        log.info("Фильм успешно создан с id {}: {}", createdFilm.getId(), createdFilm);
+        return createdFilm;
     }
 
     @PutMapping
@@ -40,23 +42,37 @@ public class FilmController {
             throw new ValidationException("Id должен быть указан");
         }
 
-        if (!films.containsKey(newFilm.getId())) {
+        if (filmStorage.findById(newFilm.getId()).isEmpty()) {
             log.error("Ошибка обновления: фильм с id {} не найден", newFilm.getId());
             throw new ValidationException("Фильм не найден");
         }
 
         check(newFilm);
-        films.put(newFilm.getId(), newFilm);
+        Film updatedFilm = filmStorage.update(newFilm);
 
-        log.info("Фильм с id {} успешно обновлен: {}", newFilm.getId(), newFilm);
-        return newFilm;
+        log.info("Фильм с id {} успешно обновлен: {}", updatedFilm.getId(), updatedFilm);
+        return updatedFilm;
     }
 
     @GetMapping
     public Collection<Film> findAll() {
         log.info("Получен запрос на получение всех фильмов");
-        return films.values();
+        return filmStorage.findAll();
     }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable long id) {
+        log.info("Получен запрос на удаление фильм с id {}", id);
+
+        if (filmStorage.findById(id).isEmpty()) {
+            log.error("Ошибка удаления: Фильм с id {} не найден", id);
+            throw new ValidationException("Фильм не найден");
+        }
+
+        filmStorage.delete(id);
+        log.info("Фильм с id {} успешно удален", id);
+    }
+
 
     private void check(Film film) {
         if (film.getName() == null || film.getName().isBlank()) {
@@ -83,15 +99,5 @@ public class FilmController {
             log.error("Ошибка валидации: некорректная длительность {}", film.getDuration());
             throw new ValidationException("Продолжительность фильма должна быть положительной");
         }
-    }
-
-    private long getNextId() {
-        long currentMaxId = films.keySet()
-                .stream()
-                .mapToLong(Long::longValue)
-                .max()
-                .orElse(0);
-
-        return currentMaxId + 1;
     }
 }

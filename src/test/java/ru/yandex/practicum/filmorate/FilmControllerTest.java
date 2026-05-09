@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 
 import java.time.LocalDate;
 
@@ -16,7 +17,8 @@ class FilmControllerTest {
 
     @BeforeEach
     void setUp() {
-        filmController = new FilmController();
+        filmController = new FilmController(new InMemoryFilmStorage());
+
     }
 
     @Test
@@ -167,5 +169,24 @@ class FilmControllerTest {
         film.setDuration(100);
 
         assertThrows(ValidationException.class, () -> filmController.update(film));
+    }
+
+    @Test
+    void shouldDeleteExistingFilm() {
+        Film film = new Film();
+        film.setName("Film");
+        film.setDescription("Good film");
+        film.setReleaseDate(LocalDate.of(2000, 1, 1));
+        film.setDuration(100);
+
+        Film createdFilm = filmController.create(film);
+        filmController.delete(createdFilm.getId());
+
+        assertEquals(0, filmController.findAll().size());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeletingNonExistingFilm() {
+        assertThrows(ValidationException.class, () -> filmController.delete(999L));
     }
 }

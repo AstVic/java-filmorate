@@ -4,18 +4,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
 
-    private final Map<Long, User> users = new HashMap<>();
+    private final UserStorage userStorage;
+
+    public UserController(UserStorage userStorage) {
+        this.userStorage = userStorage;
+    }
 
     @PostMapping
     public User create(@RequestBody User user) {
@@ -27,11 +30,10 @@ public class UserController {
 
         check(user);
 
-        user.setId(getNextId());
-        users.put(user.getId(), user);
+        User createdUser = userStorage.add(user);
 
-        log.info("Пользователь успешно создан с id {}: {}", user.getId(), user);
-        return user;
+        log.info("Пользователь успешно создан с id {}: {}", createdUser.getId(), createdUser);
+        return createdUser;
     }
 
     @PutMapping
@@ -43,7 +45,7 @@ public class UserController {
             throw new ValidationException("Id должен быть указан");
         }
 
-        if (!users.containsKey(newUser.getId())) {
+        if (userStorage.findById(newUser.getId()).isEmpty()) {
             log.error("Ошибка обновления: пользователь с id {} не найден", newUser.getId());
             throw new ValidationException("Пользователь не найден");
         }
@@ -53,16 +55,29 @@ public class UserController {
         }
 
         check(newUser);
-        users.put(newUser.getId(), newUser);
+        User updatedUser = userStorage.update(newUser);
 
-        log.info("Пользователь с id {} успешно обновлен: {}", newUser.getId(), newUser);
-        return newUser;
+        log.info("Пользователь с id {} успешно обновлен: {}", updatedUser.getId(), updatedUser);
+        return updatedUser;
     }
 
     @GetMapping
     public Collection<User> findAll() {
         log.info("Получен запрос на получение всех пользователей");
-        return users.values();
+        return userStorage.findAll();
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable long id) {
+        log.info("Получен запрос на удаление пользователь с id {}", id);
+
+        if (userStorage.findById(id).isEmpty()) {
+            log.error("Ошибка удаления: Пользователь с id {} не найден", id);
+            throw new ValidationException("Пользователь не найден");
+        }
+
+        userStorage.delete(id);
+        log.info("Пользователь с id {} успешно удален", id);
     }
 
     private void check(User user) {
@@ -80,15 +95,5 @@ public class UserController {
             log.error("Ошибка валидации: дата рождения в будущем - {}", user.getBirthday());
             throw new ValidationException("Дата рождения не может быть в будущем");
         }
-    }
-
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(Long::longValue)
-                .max()
-                .orElse(0);
-
-        return currentMaxId + 1;
     }
 }
