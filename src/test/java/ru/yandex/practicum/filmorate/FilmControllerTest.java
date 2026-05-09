@@ -257,6 +257,7 @@ class FilmControllerTest {
 
         assertFalse(popular.isEmpty());
     }
+
     private User createUser(String login) {
         User user = new User();
         user.setEmail(login + "@mail.ru");

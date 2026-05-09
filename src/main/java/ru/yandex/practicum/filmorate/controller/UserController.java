@@ -91,7 +91,7 @@ public class UserController {
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
     }
 
-        @GetMapping
+    @GetMapping
     public Collection<User> findAll() {
         log.info("Получен запрос на получение всех пользователей");
         return userStorage.findAll();
