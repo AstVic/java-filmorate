@@ -5,9 +5,12 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
+import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +20,9 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        userController = new UserController(new InMemoryUserStorage());
+        UserStorage userStorage = new InMemoryUserStorage();
+        UserService userService = new UserService(userStorage);
+        userController = new UserController(userStorage, userService);
     }
 
     @Test
@@ -36,6 +41,44 @@ class UserControllerTest {
         assertEquals("Nick Name", createdUser.getName());
         assertEquals(LocalDate.of(1946, 8, 20), createdUser.getBirthday());
         assertEquals(1, userController.findAll().size());
+    }
+
+    @Test
+    void shouldAddUsersToFriendsMutually() {
+        User lena = createUser("lena");
+        User sasha = createUser("sasha");
+
+        userController.addFriend(lena.getId(), sasha.getId());
+
+        assertTrue(userController.getFriends(lena.getId()).stream().anyMatch(u -> u.getId().equals(sasha.getId())));
+        assertTrue(userController.getFriends(sasha.getId()).stream().anyMatch(u -> u.getId().equals(lena.getId())));
+    }
+
+    @Test
+    void shouldRemoveUsersFromFriendsMutually() {
+        User lena = createUser("lena");
+        User sasha = createUser("sasha");
+        userController.addFriend(lena.getId(), sasha.getId());
+
+        userController.removeFriend(lena.getId(), sasha.getId());
+
+        assertTrue(userController.getFriends(lena.getId()).isEmpty());
+        assertTrue(userController.getFriends(sasha.getId()).isEmpty());
+    }
+
+    @Test
+    void shouldReturnCommonFriends() {
+        User first = createUser("first");
+        User second = createUser("second");
+        User common = createUser("common");
+
+        userController.addFriend(first.getId(), common.getId());
+        userController.addFriend(second.getId(), common.getId());
+
+        Collection<User> commonFriends = userController.getCommonFriends(first.getId(), second.getId());
+
+        assertEquals(1, commonFriends.size());
+        assertEquals(common.getId(), commonFriends.iterator().next().getId());
     }
 
     @Test
@@ -133,16 +176,10 @@ class UserControllerTest {
 
     @Test
     void shouldUpdateExistingUser() {
-        User user = new User();
-        user.setEmail("mail@mail.ru");
-        user.setLogin("dolore");
-        user.setName("Nick Name");
-        user.setBirthday(LocalDate.of(1946, 8, 20));
-
-        User createdUser = userController.create(user);
+        User user = createUser("dolore");
 
         User updatedUser = new User();
-        updatedUser.setId(createdUser.getId());
+        updatedUser.setId(user.getId());
         updatedUser.setEmail("new@mail.ru");
         updatedUser.setLogin("newlogin");
         updatedUser.setName("New Name");
@@ -150,7 +187,7 @@ class UserControllerTest {
 
         User result = userController.update(updatedUser);
 
-        assertEquals(createdUser.getId(), result.getId());
+        assertEquals(user.getId(), result.getId());
         assertEquals("new@mail.ru", result.getEmail());
         assertEquals("newlogin", result.getLogin());
         assertEquals("New Name", result.getName());
@@ -181,13 +218,7 @@ class UserControllerTest {
 
     @Test
     void shouldDeleteExistingUser() {
-        User user = new User();
-        user.setEmail("mail@mail.ru");
-        user.setLogin("dolore");
-        user.setName("Nick Name");
-        user.setBirthday(LocalDate.of(1946, 8, 20));
-
-        User createdUser = userController.create(user);
+        User createdUser = createUser("dolore");
         userController.delete(createdUser.getId());
 
         assertEquals(0, userController.findAll().size());
@@ -198,4 +229,12 @@ class UserControllerTest {
         assertThrows(ValidationException.class, () -> userController.delete(999L));
     }
 
+    private User createUser(String login) {
+        User user = new User();
+        user.setEmail(login + "@mail.ru");
+        user.setLogin(login);
+        user.setName(login);
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+        return userController.create(user);
+    }
 }
