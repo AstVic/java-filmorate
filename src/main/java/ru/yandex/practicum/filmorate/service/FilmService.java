@@ -2,7 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -41,12 +41,12 @@ public class FilmService {
 
     private Film getFilmOrThrow(long id) {
         return filmStorage.findById(id)
-                .orElseThrow(() -> new ValidationException("Фильм не найден"));
+                .orElseThrow(() -> new NotFoundException("Фильм не найден"));
     }
 
     private void validateUser(long userId) {
         if (userStorage.findById(userId).isEmpty()) {
-            throw new ValidationException("Пользователь не найден");
+            throw new NotFoundException("Пользователь не найден");
         }
     }
 }

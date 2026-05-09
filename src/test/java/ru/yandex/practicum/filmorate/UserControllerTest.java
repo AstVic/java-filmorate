@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.UserController;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
@@ -213,7 +214,7 @@ class UserControllerTest {
         user.setName("Nick Name");
         user.setBirthday(LocalDate.of(1946, 8, 20));
 
-        assertThrows(ValidationException.class, () -> userController.update(user));
+        assertThrows(NotFoundException.class, () -> userController.update(user));
     }
 
     @Test
@@ -226,9 +227,24 @@ class UserControllerTest {
 
     @Test
     void shouldThrowExceptionWhenDeletingNonExistingUser() {
-        assertThrows(ValidationException.class, () -> userController.delete(999L));
+        assertThrows(NotFoundException.class, () -> userController.delete(999L));
     }
 
+
+    @Test
+    void shouldReturnUserById() {
+        User createdUser = createUser("lookup");
+
+        User foundUser = userController.getById(createdUser.getId());
+
+        assertEquals(createdUser.getId(), foundUser.getId());
+        assertEquals("lookup", foundUser.getLogin());
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenGettingUserByUnknownId() {
+        assertThrows(NotFoundException.class, () -> userController.getById(999L));
+    }
     private User createUser(String login) {
         User user = new User();
         user.setEmail(login + "@mail.ru");

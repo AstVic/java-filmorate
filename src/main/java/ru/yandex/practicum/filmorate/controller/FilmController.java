@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
@@ -47,7 +48,7 @@ public class FilmController {
 
         if (filmStorage.findById(newFilm.getId()).isEmpty()) {
             log.error("Ошибка обновления: фильм с id {} не найден", newFilm.getId());
-            throw new ValidationException("Фильм не найден");
+            throw new NotFoundException("Фильм не найден");
         }
 
         check(newFilm);
@@ -72,6 +73,12 @@ public class FilmController {
         return filmService.getPopular(count);
     }
 
+    @GetMapping("/{id}")
+    public Film getById(@PathVariable long id) {
+        return filmStorage.findById(id)
+                .orElseThrow(() -> new NotFoundException("Фильм не найден"));
+    }
+
     @GetMapping
     public Collection<Film> findAll() {
         log.info("Получен запрос на получение всех фильмов");
@@ -84,7 +91,7 @@ public class FilmController {
 
         if (filmStorage.findById(id).isEmpty()) {
             log.error("Ошибка удаления: Фильм с id {} не найден", id);
-            throw new ValidationException("Фильм не найден");
+            throw new NotFoundException("Фильм не найден");
         }
 
         filmStorage.delete(id);

@@ -1,8 +1,8 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
@@ -51,7 +51,7 @@ public class UserController {
 
         if (userStorage.findById(newUser.getId()).isEmpty()) {
             log.error("Ошибка обновления: пользователь с id {} не найден", newUser.getId());
-            throw new ValidationException("Пользователь не найден");
+            throw new NotFoundException("Пользователь не найден");
         }
 
         if (newUser.getName() == null || newUser.getName().isBlank()) {
@@ -85,7 +85,13 @@ public class UserController {
         return userService.getCommonFriends(id, otherId);
     }
 
-    @GetMapping
+    @GetMapping("/{id}")
+    public User getById(@PathVariable long id) {
+        return userStorage.findById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+    }
+
+        @GetMapping
     public Collection<User> findAll() {
         log.info("Получен запрос на получение всех пользователей");
         return userStorage.findAll();
@@ -97,7 +103,7 @@ public class UserController {
 
         if (userStorage.findById(id).isEmpty()) {
             log.error("Ошибка удаления: Пользователь с id {} не найден", id);
-            throw new ValidationException("Пользователь не найден");
+            throw new NotFoundException("Пользователь не найден");
         }
 
         userStorage.delete(id);

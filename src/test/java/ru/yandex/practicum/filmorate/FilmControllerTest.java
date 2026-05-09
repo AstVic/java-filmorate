@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.controller.FilmController;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -214,7 +215,7 @@ class FilmControllerTest {
         film.setReleaseDate(LocalDate.of(2000, 1, 1));
         film.setDuration(100);
 
-        assertThrows(ValidationException.class, () -> filmController.update(film));
+        assertThrows(NotFoundException.class, () -> filmController.update(film));
     }
 
     @Test
@@ -227,9 +228,35 @@ class FilmControllerTest {
 
     @Test
     void shouldThrowExceptionWhenDeletingNonExistingFilm() {
-        assertThrows(ValidationException.class, () -> filmController.delete(999L));
+        assertThrows(NotFoundException.class, () -> filmController.delete(999L));
     }
 
+
+    @Test
+    void shouldReturnFilmById() {
+        Film createdFilm = createFilm("lookup");
+
+        Film foundFilm = filmController.getById(createdFilm.getId());
+
+        assertEquals(createdFilm.getId(), foundFilm.getId());
+        assertEquals("lookup", foundFilm.getName());
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenGettingFilmByUnknownId() {
+        assertThrows(NotFoundException.class, () -> filmController.getById(999L));
+    }
+
+    @Test
+    void shouldReturnTop10ByDefaultCount() {
+        User user = createUser("single");
+        Film film = createFilm("popular");
+        filmController.addLike(film.getId(), user.getId());
+
+        List<Film> popular = (List<Film>) filmController.getPopular(10);
+
+        assertFalse(popular.isEmpty());
+    }
     private User createUser(String login) {
         User user = new User();
         user.setEmail(login + "@mail.ru");
