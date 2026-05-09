@@ -245,6 +245,7 @@ class UserControllerTest {
     void shouldThrowNotFoundWhenGettingUserByUnknownId() {
         assertThrows(NotFoundException.class, () -> userController.getById(999L));
     }
+
     private User createUser(String login) {
         User user = new User();
         user.setEmail(login + "@mail.ru");
