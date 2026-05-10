@@ -23,7 +23,7 @@ class UserControllerTest {
     void setUp() {
         UserStorage userStorage = new InMemoryUserStorage();
         UserService userService = new UserService(userStorage);
-        userController = new UserController(userStorage, userService);
+        userController = new UserController(userService);
     }
 
     @Test
