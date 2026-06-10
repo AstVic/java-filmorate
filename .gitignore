@@ -74,3 +74,4 @@ db/*.lock.db
 .env
 application-local.properties
 application-local.yml
+Main.java
