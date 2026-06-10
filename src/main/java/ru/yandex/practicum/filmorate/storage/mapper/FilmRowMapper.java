@@ -23,11 +23,13 @@ public class FilmRowMapper implements RowMapper<Film> {
         }
 
         film.setDuration(resultSet.getInt("duration"));
-        film.setMpa(mapMpa(resultSet.getString("rating")));
-        return film;
-    }
 
-    private MPA mapMpa(String rating) {
-        return MPA.valueOf(rating.replace('-', '_'));
+        MPA mpa = new MPA();
+        mpa.setId(resultSet.getLong("mpa_id"));
+        mpa.setName(resultSet.getString("rating"));
+        mpa.setDescription(resultSet.getString("mpa_description"));
+        film.setMpa(mpa);
+
+        return film;
     }
 }

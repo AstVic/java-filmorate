@@ -58,23 +58,25 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User friend = getUserOrThrow(friendId);
 
-        user.getFriends().put(friendId, FriendshipStatus.CONFIRMED);
-        friend.getFriends().put(userId, FriendshipStatus.CONFIRMED);
-
-        userStorage.update(user);
-        userStorage.update(friend);
+        if (friend.getFriends().get(userId) == FriendshipStatus.UNCONFIRMED) {
+            user.getFriends().put(friendId, FriendshipStatus.CONFIRMED);
+            friend.getFriends().put(userId, FriendshipStatus.CONFIRMED);
+            userStorage.update(user);
+            userStorage.update(friend);
+        } else {
+            user.getFriends().put(friendId, FriendshipStatus.UNCONFIRMED);
+            userStorage.update(user);
+        }
         return user;
     }
 
     public User removeFriend(long userId, long friendId) {
         User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
+        getUserOrThrow(friendId);
 
         user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
 
         userStorage.update(user);
-        userStorage.update(friend);
         return user;
     }
 

@@ -55,17 +55,15 @@ public class FilmService {
     }
 
     public Film addLike(long filmId, long userId) {
-        Film film = getFilmOrThrow(filmId);
+        getFilmOrThrow(filmId);
         validateUser(userId);
-        film.getLikes().add(userId);
-        return filmStorage.update(film);
+        return filmStorage.addLike(filmId, userId);
     }
 
     public Film removeLike(long filmId, long userId) {
-        Film film = getFilmOrThrow(filmId);
+        getFilmOrThrow(filmId);
         validateUser(userId);
-        film.getLikes().remove(userId);
-        return filmStorage.update(film);
+        return filmStorage.removeLike(filmId, userId);
     }
 
     public Collection<Film> getPopular(int count) {

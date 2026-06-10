@@ -45,26 +45,32 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldAddUsersToFriendsMutually() {
+    void shouldAddDirectedFriendship() {
         User lena = createUser("lena");
         User sasha = createUser("sasha");
 
         userController.addFriend(lena.getId(), sasha.getId());
 
         assertTrue(userController.getFriends(lena.getId()).stream().anyMatch(u -> u.getId().equals(sasha.getId())));
+        assertTrue(userController.getFriends(sasha.getId()).isEmpty());
+
+        userController.addFriend(sasha.getId(), lena.getId());
+
+        assertTrue(userController.getFriends(lena.getId()).stream().anyMatch(u -> u.getId().equals(sasha.getId())));
         assertTrue(userController.getFriends(sasha.getId()).stream().anyMatch(u -> u.getId().equals(lena.getId())));
     }
 
     @Test
-    void shouldRemoveUsersFromFriendsMutually() {
+    void shouldRemoveOnlyRequestedFriendshipDirection() {
         User lena = createUser("lena");
         User sasha = createUser("sasha");
         userController.addFriend(lena.getId(), sasha.getId());
+        userController.addFriend(sasha.getId(), lena.getId());
 
         userController.removeFriend(lena.getId(), sasha.getId());
 
         assertTrue(userController.getFriends(lena.getId()).isEmpty());
-        assertTrue(userController.getFriends(sasha.getId()).isEmpty());
+        assertTrue(userController.getFriends(sasha.getId()).stream().anyMatch(u -> u.getId().equals(lena.getId())));
     }
 
     @Test
@@ -74,7 +80,9 @@ class UserControllerTest {
         User common = createUser("common");
 
         userController.addFriend(first.getId(), common.getId());
+        userController.addFriend(common.getId(), first.getId());
         userController.addFriend(second.getId(), common.getId());
+        userController.addFriend(common.getId(), second.getId());
 
         Collection<User> commonFriends = userController.getCommonFriends(first.getId(), second.getId());
 
