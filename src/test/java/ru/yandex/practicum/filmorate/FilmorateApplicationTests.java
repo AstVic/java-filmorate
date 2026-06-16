@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @JdbcTest
 @AutoConfigureTestDatabase
@@ -158,16 +160,13 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    void shouldAddFilmWithDefaultMpa() {
+    void shouldThrowExceptionWhenFilmMpaIsMissing() {
         Film film = createFilm("Film");
         film.setMpa(null);
 
-        Film savedFilm = filmStorage.add(film);
-
-        assertThat(savedFilm.getMpa().getName()).isEqualTo("G");
-        assertThat(filmStorage.findById(savedFilm.getId()))
-                .isPresent()
-                .hasValueSatisfying(foundFilm -> assertThat(foundFilm.getMpa().getName()).isEqualTo("G"));
+        assertThatThrownBy(() -> filmStorage.add(film))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Рейтинг MPA должен быть указан");
     }
 
     @Test

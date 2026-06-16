@@ -13,28 +13,29 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GenreDbStorage implements GenreStorage {
 
+    private static final String FIND_GENRE_BY_ID_QUERY = """
+            SELECT id, name
+            FROM genres
+            WHERE id = ?
+            """;
+    private static final String FIND_ALL_GENRES_QUERY = """
+            SELECT id, name
+            FROM genres
+            ORDER BY id
+            """;
+
     private final JdbcTemplate jdbcTemplate;
     private final GenreRowMapper genreRowMapper;
 
     @Override
     public Optional<Genre> findById(long id) {
-        String sql = """
-                SELECT id, name
-                FROM genres
-                WHERE id = ?
-                """;
-        return jdbcTemplate.query(sql, genreRowMapper, id)
+        return jdbcTemplate.query(FIND_GENRE_BY_ID_QUERY, genreRowMapper, id)
                 .stream()
                 .findFirst();
     }
 
     @Override
     public Collection<Genre> findAll() {
-        String sql = """
-                SELECT id, name
-                FROM genres
-                ORDER BY id
-                """;
-        return jdbcTemplate.query(sql, genreRowMapper);
+        return jdbcTemplate.query(FIND_ALL_GENRES_QUERY, genreRowMapper);
     }
 }

@@ -21,19 +21,46 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserDbStorage implements UserStorage {
 
+    private static final String INSERT_USER_QUERY = """
+            INSERT INTO users (login, name, email, birthday)
+            VALUES (?, ?, ?, ?)
+            """;
+    private static final String UPDATE_USER_QUERY = """
+            UPDATE users
+            SET login = ?, name = ?, email = ?, birthday = ?
+            WHERE id = ?
+            """;
+    private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE id = ?";
+    private static final String FIND_USER_BY_ID_QUERY = """
+            SELECT id, login, name, email, birthday
+            FROM users
+            WHERE id = ?
+            """;
+    private static final String FIND_ALL_USERS_QUERY = """
+            SELECT id, login, name, email, birthday
+            FROM users
+            ORDER BY id
+            """;
+    private static final String FIND_USER_FRIENDS_QUERY = """
+            SELECT friend_id, status
+            FROM friendships
+            WHERE user_id = ?
+            """;
+    private static final String DELETE_USER_FRIENDS_QUERY = "DELETE FROM friendships WHERE user_id = ?";
+    private static final String INSERT_USER_FRIEND_QUERY = """
+            INSERT INTO friendships (user_id, friend_id, status)
+            VALUES (?, ?, ?)
+            """;
+
     private final JdbcTemplate jdbcTemplate;
     private final UserRowMapper userRowMapper;
 
     @Override
     public User add(User user) {
-        String sql = """
-                INSERT INTO users (login, name, email, birthday)
-                VALUES (?, ?, ?, ?)
-                """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement statement = connection.prepareStatement(INSERT_USER_QUERY, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, user.getLogin());
             statement.setString(2, user.getName());
             statement.setString(3, user.getEmail());
@@ -48,29 +75,26 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public User update(User user) {
-        String sql = """
-                UPDATE users
-                SET login = ?, name = ?, email = ?, birthday = ?
-                WHERE id = ?
-                """;
-        jdbcTemplate.update(sql, user.getLogin(), user.getName(), user.getEmail(), user.getBirthday(), user.getId());
+        jdbcTemplate.update(
+                UPDATE_USER_QUERY,
+                user.getLogin(),
+                user.getName(),
+                user.getEmail(),
+                user.getBirthday(),
+                user.getId()
+        );
         saveFriends(user);
         return user;
     }
 
     @Override
     public void delete(long id) {
-        jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
+        jdbcTemplate.update(DELETE_USER_QUERY, id);
     }
 
     @Override
     public Optional<User> findById(long id) {
-        String sql = """
-                SELECT id, login, name, email, birthday
-                FROM users
-                WHERE id = ?
-                """;
-        return jdbcTemplate.query(sql, userRowMapper, id)
+        return jdbcTemplate.query(FIND_USER_BY_ID_QUERY, userRowMapper, id)
                 .stream()
                 .findFirst()
                 .map(this::loadFriends);
@@ -78,12 +102,7 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public Collection<User> findAll() {
-        String sql = """
-                SELECT id, login, name, email, birthday
-                FROM users
-                ORDER BY id
-                """;
-        Collection<User> users = jdbcTemplate.query(sql, userRowMapper);
+        Collection<User> users = jdbcTemplate.query(FIND_ALL_USERS_QUERY, userRowMapper);
         users.forEach(this::loadFriends);
         return users;
     }
@@ -94,13 +113,8 @@ public class UserDbStorage implements UserStorage {
     }
 
     private Map<Long, FriendshipStatus> findFriends(long userId) {
-        String sql = """
-                SELECT friend_id, status
-                FROM friendships
-                WHERE user_id = ?
-                """;
         Map<Long, FriendshipStatus> friends = new HashMap<>();
-        jdbcTemplate.query(sql, resultSet -> {
+        jdbcTemplate.query(FIND_USER_FRIENDS_QUERY, resultSet -> {
             friends.put(
                     resultSet.getLong("friend_id"),
                     FriendshipStatus.valueOf(resultSet.getString("status"))
@@ -110,13 +124,14 @@ public class UserDbStorage implements UserStorage {
     }
 
     private void saveFriends(User user) {
-        jdbcTemplate.update("DELETE FROM friendships WHERE user_id = ?", user.getId());
+        jdbcTemplate.update(DELETE_USER_FRIENDS_QUERY, user.getId());
 
-        String sql = """
-                INSERT INTO friendships (user_id, friend_id, status)
-                VALUES (?, ?, ?)
-                """;
         user.getFriends()
-                .forEach((friendId, status) -> jdbcTemplate.update(sql, user.getId(), friendId, status.name()));
+                .forEach((friendId, status) -> jdbcTemplate.update(
+                        INSERT_USER_FRIEND_QUERY,
+                        user.getId(),
+                        friendId,
+                        status.name()
+                ));
     }
 }

@@ -13,40 +13,41 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MpaDbStorage implements MpaStorage {
 
+    private static final String FIND_MPA_BY_ID_QUERY = """
+            SELECT id, rating, description
+            FROM mpa
+            WHERE id = ?
+            """;
+    private static final String FIND_MPA_BY_RATING_QUERY = """
+            SELECT id, rating, description
+            FROM mpa
+            WHERE rating = ?
+            """;
+    private static final String FIND_ALL_MPA_QUERY = """
+            SELECT id, rating, description
+            FROM mpa
+            ORDER BY id
+            """;
+
     private final JdbcTemplate jdbcTemplate;
     private final MpaRowMapper mpaRowMapper;
 
     @Override
     public Optional<MPA> findById(long id) {
-        String sql = """
-                SELECT id, rating, description
-                FROM mpa
-                WHERE id = ?
-                """;
-        return jdbcTemplate.query(sql, mpaRowMapper, id)
+        return jdbcTemplate.query(FIND_MPA_BY_ID_QUERY, mpaRowMapper, id)
                 .stream()
                 .findFirst();
     }
 
     @Override
     public Optional<MPA> findByRating(String rating) {
-        String sql = """
-                SELECT id, rating, description
-                FROM mpa
-                WHERE rating = ?
-                """;
-        return jdbcTemplate.query(sql, mpaRowMapper, rating)
+        return jdbcTemplate.query(FIND_MPA_BY_RATING_QUERY, mpaRowMapper, rating)
                 .stream()
                 .findFirst();
     }
 
     @Override
     public Collection<MPA> findAll() {
-        String sql = """
-                SELECT id, rating, description
-                FROM mpa
-                ORDER BY id
-                """;
-        return jdbcTemplate.query(sql, mpaRowMapper);
+        return jdbcTemplate.query(FIND_ALL_MPA_QUERY, mpaRowMapper);
     }
 }
