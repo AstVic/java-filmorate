@@ -1,9 +1,10 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -12,10 +13,13 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class UserService {
 
     private final UserStorage userStorage;
+
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage) {
+        this.userStorage = userStorage;
+    }
 
     public User create(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
@@ -54,23 +58,31 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User friend = getUserOrThrow(friendId);
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        if (friend.getFriends().get(userId) == FriendshipStatus.UNCONFIRMED) {
+            user.getFriends().put(friendId, FriendshipStatus.CONFIRMED);
+            friend.getFriends().put(userId, FriendshipStatus.CONFIRMED);
+            userStorage.update(user);
+            userStorage.update(friend);
+        } else {
+            user.getFriends().put(friendId, FriendshipStatus.UNCONFIRMED);
+            userStorage.update(user);
+        }
         return user;
     }
 
     public User removeFriend(long userId, long friendId) {
         User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
+        getUserOrThrow(friendId);
 
         user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+
+        userStorage.update(user);
         return user;
     }
 
     public Collection<User> getFriends(long userId) {
         User user = getUserOrThrow(userId);
-        return user.getFriends().stream()
+        return user.getFriends().keySet().stream()
                 .map(this::getUserOrThrow)
                 .collect(Collectors.toList());
     }
@@ -79,8 +91,8 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User other = getUserOrThrow(otherId);
 
-        return user.getFriends().stream()
-                .filter(other.getFriends()::contains)
+        return user.getFriends().keySet().stream()
+                .filter(other.getFriends().keySet()::contains)
                 .map(this::getUserOrThrow)
                 .collect(Collectors.toList());
     }

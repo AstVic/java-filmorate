@@ -1,6 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
@@ -14,12 +14,18 @@ import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class FilmService {
 
     private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
+
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
+
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
+                       @Qualifier("userDbStorage") UserStorage userStorage) {
+        this.filmStorage = filmStorage;
+        this.userStorage = userStorage;
+    }
 
     public Film create(Film film) {
         validate(film);
@@ -49,17 +55,15 @@ public class FilmService {
     }
 
     public Film addLike(long filmId, long userId) {
-        Film film = getFilmOrThrow(filmId);
+        getFilmOrThrow(filmId);
         validateUser(userId);
-        film.getLikes().add(userId);
-        return filmStorage.update(film);
+        return filmStorage.addLike(filmId, userId);
     }
 
     public Film removeLike(long filmId, long userId) {
-        Film film = getFilmOrThrow(filmId);
+        getFilmOrThrow(filmId);
         validateUser(userId);
-        film.getLikes().remove(userId);
-        return filmStorage.update(film);
+        return filmStorage.removeLike(filmId, userId);
     }
 
     public Collection<Film> getPopular(int count) {

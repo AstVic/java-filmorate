@@ -44,3 +44,34 @@ build/
 
 *.db
 db/*
+
+# Default ignored files
+/shelf/
+/workspace.xml
+volumes/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# Maven
+target/
+
+# Logs
+*.log
+
+# Local database files
+db/*.mv.db
+db/*.trace.db
+db/*.lock.db
+
+# Environment/local config
+.env
+application-local.properties
+application-local.yml
+Main.java
