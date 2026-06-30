@@ -73,6 +73,15 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        validateUser(userId);
+        validateUser(friendId);
+        return filmStorage.findAll().stream()
+                .filter(film -> film.getLikes().contains(userId) && film.getLikes().contains(friendId))
+                .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
+                .collect(Collectors.toList());
+    }
+
     private Film getFilmOrThrow(long id) {
         return filmStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Фильм не найден"));
