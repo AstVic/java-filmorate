@@ -222,6 +222,42 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    void shouldDeleteFilmWithLikesAndGenres() {
+        User user = userStorage.add(createUser("user-login", "user@mail.ru"));
+        Film film = createFilm("Film");
+        film.setGenres(Set.of(genre(1), genre(2)));
+        Film savedFilm = filmStorage.add(film);
+        filmStorage.addLike(savedFilm.getId(), user.getId());
+
+        filmStorage.delete(savedFilm.getId());
+
+        assertThat(filmStorage.findById(savedFilm.getId())).isEmpty();
+        assertThat(countRows("likes")).isZero();
+        assertThat(countRows("film_genres")).isZero();
+        assertThat(userStorage.findById(user.getId())).isPresent();
+    }
+
+    @Test
+    void shouldDeleteUserWithFriendshipsAndLikes() {
+        User user = userStorage.add(createUser("user-login", "user@mail.ru"));
+        User friend = userStorage.add(createUser("friend-login", "friend@mail.ru"));
+        user.setFriends(Map.of(friend.getId(), FriendshipStatus.UNCONFIRMED));
+        userStorage.update(user);
+        Film film = filmStorage.add(createFilm("Film"));
+        filmStorage.addLike(film.getId(), user.getId());
+
+        userStorage.delete(user.getId());
+
+        assertThat(userStorage.findById(user.getId())).isEmpty();
+        assertThat(userStorage.findById(friend.getId())).isPresent();
+        assertThat(countRows("friendships")).isZero();
+        assertThat(countRows("likes")).isZero();
+        assertThat(filmStorage.findById(film.getId()))
+                .isPresent()
+                .hasValueSatisfying(foundFilm -> assertThat(foundFilm.getLikes()).isEmpty());
+    }
+
+    @Test
     void shouldFindFilmById() {
         Film film = filmStorage.add(createFilm("Film"));
 
@@ -278,5 +314,10 @@ class FilmorateApplicationTests {
         MPA mpa = new MPA();
         mpa.setId(id);
         return mpa;
+    }
+
+    private int countRows(String table) {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
+        return count == null ? 0 : count;
     }
 }
