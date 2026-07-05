@@ -87,12 +87,6 @@ public class FilmService {
                 .filter(film -> film.getLikes().contains(userId) && film.getLikes().contains(friendId))
                 .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
                 .collect(Collectors.toList());
-    public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
-        directorDbStorage.findById(directorId)
-                .orElseThrow(() -> new NotFoundException("Режиссёр не найден"));
-        return directorDbStorage.findByFilmId(directorId) != null
-                ? ((FilmDbStorage) filmStorage).findByDirector(directorId, sortBy)
-                : new ArrayList<>();
     }
 
     private Film getFilmOrThrow(long id) {
