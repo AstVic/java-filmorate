@@ -95,6 +95,17 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
+        directorDbStorage.findById(directorId)
+                .orElseThrow(() -> new NotFoundException("Режиссёр не найден"));
+
+        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
+            throw new ValidationException("Параметр sortBy должен быть year или likes");
+        }
+
+        return ((FilmDbStorage) filmStorage).findByDirector(directorId, sortBy);
+    }
+
     private Film getFilmOrThrow(long id) {
         return filmStorage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Фильм не найден"));
