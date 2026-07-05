@@ -75,16 +75,18 @@ public class ReviewService {
         return reviewStorage.findAll(filmId, count);
     }
 
-    public void addVote(long reviewId, long userId, boolean isLike) {
+    public Review addVote(long reviewId, long userId, boolean isLike) {
         requireReview(reviewId);
         requireUser(userId);
         reviewStorage.setVote(reviewId, userId, isLike);
+        return requireReview(reviewId);
     }
 
-    public void removeVote(long reviewId, long userId) {
+    public Review removeVote(long reviewId, long userId) {
         requireReview(reviewId);
         requireUser(userId);
         reviewStorage.removeVote(reviewId, userId);
+        return requireReview(reviewId);
     }
 
     private Review requireReview(long id) {
