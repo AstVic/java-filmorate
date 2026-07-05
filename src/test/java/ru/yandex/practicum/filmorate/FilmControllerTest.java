@@ -255,7 +255,7 @@ class FilmControllerTest {
         Film film = createFilm("popular");
         filmController.addLike(film.getId(), user.getId());
 
-        List<Film> popular = (List<Film>) filmController.getPopular(10);
+        List<Film> popular = (List<Film>) filmController.getPopular(10, null, null);
 
         assertFalse(popular.isEmpty());
     }
