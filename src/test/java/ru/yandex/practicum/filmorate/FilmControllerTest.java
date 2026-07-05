@@ -87,7 +87,7 @@ class FilmControllerTest {
         filmController.addLike(first.getId(), user2.getId());
         filmController.addLike(second.getId(), user1.getId());
 
-        List<Film> popular = (List<Film>) filmController.getPopular(10);
+        List<Film> popular = (List<Film>) filmController.getPopular(10, null,null);
 
         assertEquals(2, popular.size());
         assertEquals(first.getId(), popular.get(0).getId());
