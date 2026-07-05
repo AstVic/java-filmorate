@@ -112,6 +112,11 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public Collection<Film> getRecommendations(long userId) {
+        validateUser(userId);
+        return filmStorage.findRecommendations(userId);
+    }
+
     public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
         directorDbStorage.findById(directorId)
                 .orElseThrow(() -> new NotFoundException("Режиссёр не найден"));
