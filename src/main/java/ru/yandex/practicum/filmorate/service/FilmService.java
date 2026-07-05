@@ -82,6 +82,10 @@ public class FilmService {
         return ((FilmDbStorage) filmStorage).findPopular(count, genreId, year);
     }
 
+    public List<Film> search(String query, List<String> by) {
+        return ((FilmDbStorage) filmStorage).search(query, by);
+    }
+
     public Collection<Film> getCommonFilms(long userId, long friendId) {
         validateUser(userId);
         validateUser(friendId);
