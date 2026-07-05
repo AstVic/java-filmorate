@@ -82,6 +82,10 @@ public class FilmService {
         return ((FilmDbStorage) filmStorage).findPopular(count, genreId, year);
     }
 
+    public List<Film> search(String query, List<String> by) {
+        return ((FilmDbStorage) filmStorage).search(query, by);
+    }
+
     public Collection<Film> getCommonFilms(long userId, long friendId) {
         validateUser(userId);
         validateUser(friendId);
@@ -89,6 +93,17 @@ public class FilmService {
                 .filter(film -> film.getLikes().contains(userId) && film.getLikes().contains(friendId))
                 .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
                 .collect(Collectors.toList());
+    }
+
+    public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
+        directorDbStorage.findById(directorId)
+                .orElseThrow(() -> new NotFoundException("Режиссёр не найден"));
+
+        if (!"year".equals(sortBy) && !"likes".equals(sortBy)) {
+            throw new ValidationException("Параметр sortBy должен быть year или likes");
+        }
+
+        return ((FilmDbStorage) filmStorage).findByDirector(directorId, sortBy);
     }
 
     private Film getFilmOrThrow(long id) {
