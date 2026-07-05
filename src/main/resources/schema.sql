@@ -64,3 +64,18 @@ CREATE TABLE IF NOT EXISTS events (
     operation VARCHAR(20) NOT NULL,
     entity_id BIGINT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    content TEXT NOT NULL,
+    is_positive BOOLEAN NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    film_id BIGINT NOT NULL REFERENCES films(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS review_votes (
+    review_id BIGINT NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    is_like BOOLEAN NOT NULL,
+    PRIMARY KEY (review_id, user_id)
+);
