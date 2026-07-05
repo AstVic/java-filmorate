@@ -1,11 +1,17 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.FriendshipStatus;
+import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.EventOperation;
+import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
+import ru.yandex.practicum.filmorate.storage.event.NoOpEventStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
@@ -16,9 +22,16 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserStorage userStorage;
+    private final EventStorage eventStorage;
 
-    public UserService(@Qualifier("userDbStorage") UserStorage userStorage) {
+    @Autowired
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage, EventStorage eventStorage) {
         this.userStorage = userStorage;
+        this.eventStorage = eventStorage;
+    }
+
+    public UserService(UserStorage userStorage) {
+        this(userStorage, new NoOpEventStorage());
     }
 
     public User create(User user) {
@@ -67,6 +80,7 @@ public class UserService {
             user.getFriends().put(friendId, FriendshipStatus.UNCONFIRMED);
             userStorage.update(user);
         }
+        eventStorage.add(userId, EventType.FRIEND, EventOperation.ADD, friendId);
         return user;
     }
 
@@ -77,7 +91,13 @@ public class UserService {
         user.getFriends().remove(friendId);
 
         userStorage.update(user);
+        eventStorage.add(userId, EventType.FRIEND, EventOperation.REMOVE, friendId);
         return user;
+    }
+
+    public Collection<Event> getFeed(long userId) {
+        getUserOrThrow(userId);
+        return eventStorage.findByUserId(userId);
     }
 
     public Collection<User> getFriends(long userId) {
