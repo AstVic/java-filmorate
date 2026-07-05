@@ -8,12 +8,13 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
-
+import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 public class FilmService {
@@ -71,11 +72,8 @@ public class FilmService {
         return filmStorage.removeLike(filmId, userId);
     }
 
-    public Collection<Film> getPopular(int count) {
-        return filmStorage.findAll().stream()
-                .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
-                .limit(count)
-                .collect(Collectors.toList());
+    public List<Film> getPopular(int count, Long genreId, Integer year) {
+        return ((FilmDbStorage) filmStorage).findPopular(count, genreId, year);
     }
 
     public Collection<Film> getCommonFilms(long userId, long friendId) {
