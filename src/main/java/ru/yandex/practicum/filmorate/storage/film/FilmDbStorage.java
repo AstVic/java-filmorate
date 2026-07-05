@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
 
 @Component("filmDbStorage")
 @RequiredArgsConstructor
@@ -77,6 +78,20 @@ public class FilmDbStorage implements FilmStorage {
             INSERT INTO film_genres (film_id, genre_id)
             VALUES (?, ?)
             """;
+    private static final String FIND_POPULAR_FILMS_QUERY = """
+        SELECT f.id, f.name, f.description, f.release_date, f.duration,
+                               m.id AS mpa_id, m.rating, m.description AS mpa_description
+        FROM films AS f
+        JOIN mpa AS m ON f.mpa_id = m.id
+        LEFT JOIN likes AS l ON f.id = l.film_id
+        LEFT JOIN film_genres AS fg ON f.id = fg.film_id
+        WHERE (? IS NULL OR fg.genre_id = ?)
+        AND (? IS NULL OR YEAR(f.release_date) = ?)
+        GROUP BY f.id, m.id
+        ORDER BY COUNT(l.user_id) DESC
+        LIMIT ?
+        """;
+
     private static final String FIND_FILM_DIRECTORS_QUERY = """
         SELECT d.id, d.name
         FROM film_directors AS fd
@@ -94,6 +109,13 @@ public class FilmDbStorage implements FilmStorage {
                m.id AS mpa_id, m.rating, m.description AS mpa_description
         FROM films AS f
         JOIN mpa AS m ON f.mpa_id = m.id
+        LEFT JOIN likes AS l ON f.id = l.film_id
+        LEFT JOIN film_genres AS fg ON f.id = fg.film_id
+        WHERE (? IS NULL OR fg.genre_id = ?)
+        AND (? IS NULL OR YEAR(f.release_date) = ?)
+        GROUP BY f.id, m.id
+        ORDER BY COUNT(l.user_id) DESC
+        LIMIT ?
         JOIN film_directors AS fd ON f.id = fd.film_id
         LEFT JOIN likes AS l ON f.id = l.film_id
         WHERE fd.director_id = ?
@@ -233,6 +255,15 @@ public class FilmDbStorage implements FilmStorage {
         }
         return mpaStorage.findById(film.getMpa().getId())
                 .orElseThrow(() -> new NotFoundException("Рейтинг не найден"));
+    }
+
+    public List<Film> findPopular(int count, Long genreId, Integer year) {
+        List<Film> films = jdbcTemplate.query(
+                FIND_POPULAR_FILMS_QUERY,
+                filmRowMapper,
+                genreId, genreId, year, year, count);
+        films.forEach(this::loadFilmRelations);
+        return films;
     }
 
     private void saveFilmDirectors(Film film) {

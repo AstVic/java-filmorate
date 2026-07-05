@@ -6,7 +6,6 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
 
@@ -15,7 +14,6 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 @Service
 public class FilmService {
@@ -80,12 +78,13 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
-        directorDbStorage.findById(directorId)
-                .orElseThrow(() -> new NotFoundException("Режиссёр не найден"));
-        return directorDbStorage.findByFilmId(directorId) != null
-                ? ((FilmDbStorage) filmStorage).findByDirector(directorId, sortBy)
-                : new ArrayList<>();
+    public Collection<Film> getCommonFilms(long userId, long friendId) {
+        validateUser(userId);
+        validateUser(friendId);
+        return filmStorage.findAll().stream()
+                .filter(film -> film.getLikes().contains(userId) && film.getLikes().contains(friendId))
+                .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
+                .collect(Collectors.toList());
     }
 
     private Film getFilmOrThrow(long id) {
