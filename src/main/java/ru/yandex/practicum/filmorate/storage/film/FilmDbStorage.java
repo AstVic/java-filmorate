@@ -35,18 +35,23 @@ public class FilmDbStorage implements FilmStorage {
             INSERT INTO films (name, description, release_date, duration, mpa_id)
             VALUES (?, ?, ?, ?, ?)
             """;
+
     private static final String UPDATE_FILM_QUERY = """
             UPDATE films
             SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ?
             WHERE id = ?
             """;
+
     private static final String DELETE_FILM_QUERY = "DELETE FROM films WHERE id = ?";
+
     private static final String ADD_LIKE_QUERY = """
             MERGE INTO likes (film_id, user_id)
             KEY (film_id, user_id)
             VALUES (?, ?)
             """;
+
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
+
     private static final String FIND_FILM_BY_ID_QUERY = """
             SELECT f.id, f.name, f.description, f.release_date, f.duration,
                    m.id AS mpa_id, m.rating, m.description AS mpa_description
@@ -54,6 +59,7 @@ public class FilmDbStorage implements FilmStorage {
             JOIN mpa AS m ON f.mpa_id = m.id
             WHERE f.id = ?
             """;
+
     private static final String FIND_ALL_FILMS_QUERY = """
             SELECT f.id, f.name, f.description, f.release_date, f.duration,
                    m.id AS mpa_id, m.rating, m.description AS mpa_description
@@ -61,11 +67,13 @@ public class FilmDbStorage implements FilmStorage {
             JOIN mpa AS m ON f.mpa_id = m.id
             ORDER BY f.id
             """;
+
     private static final String FIND_FILM_LIKES_QUERY = """
             SELECT user_id
             FROM likes
             WHERE film_id = ?
             """;
+
     private static final String FIND_FILM_GENRES_QUERY = """
             SELECT g.id, g.name
             FROM film_genres AS fg
@@ -73,7 +81,9 @@ public class FilmDbStorage implements FilmStorage {
             WHERE fg.film_id = ?
             ORDER BY g.id
             """;
+
     private static final String DELETE_FILM_GENRES_QUERY = "DELETE FROM film_genres WHERE film_id = ?";
+
     private static final String INSERT_FILM_GENRE_QUERY = """
             INSERT INTO film_genres (film_id, genre_id)
             VALUES (?, ?)
@@ -100,28 +110,24 @@ public class FilmDbStorage implements FilmStorage {
         ORDER BY d.id
         """;
     private static final String DELETE_FILM_DIRECTORS_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
+
     private static final String INSERT_FILM_DIRECTOR_QUERY = """
         INSERT INTO film_directors (film_id, director_id)
         VALUES (?, ?)
         """;
+
     private static final String FIND_FILMS_BY_DIRECTOR_LIKES_QUERY = """
         SELECT f.id, f.name, f.description, f.release_date, f.duration,
                m.id AS mpa_id, m.rating, m.description AS mpa_description
         FROM films AS f
         JOIN mpa AS m ON f.mpa_id = m.id
-        LEFT JOIN likes AS l ON f.id = l.film_id
-        LEFT JOIN film_genres AS fg ON f.id = fg.film_id
-        WHERE (? IS NULL OR fg.genre_id = ?)
-        AND (? IS NULL OR YEAR(f.release_date) = ?)
-        GROUP BY f.id, m.id
-        ORDER BY COUNT(l.user_id) DESC
-        LIMIT ?
         JOIN film_directors AS fd ON f.id = fd.film_id
         LEFT JOIN likes AS l ON f.id = l.film_id
         WHERE fd.director_id = ?
         GROUP BY f.id, m.id
         ORDER BY COUNT(l.user_id) DESC
         """;
+
     private static final String FIND_FILMS_BY_DIRECTOR_YEAR_QUERY = """
         SELECT f.id, f.name, f.description, f.release_date, f.duration,
                m.id AS mpa_id, m.rating, m.description AS mpa_description
