@@ -52,17 +52,17 @@ public class ReviewController {
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public void like(@PathVariable long id, @PathVariable long userId) {
-        reviewService.addVote(id, userId, true);
+    public Review like(@PathVariable long id, @PathVariable long userId) {
+        return reviewService.addVote(id, userId, true);
     }
 
     @PutMapping("/{id}/dislike/{userId}")
-    public void dislike(@PathVariable long id, @PathVariable long userId) {
-        reviewService.addVote(id, userId, false);
+    public Review dislike(@PathVariable long id, @PathVariable long userId) {
+        return reviewService.addVote(id, userId, false);
     }
 
     @DeleteMapping({"/{id}/like/{userId}", "/{id}/dislike/{userId}"})
-    public void removeVote(@PathVariable long id, @PathVariable long userId) {
-        reviewService.removeVote(id, userId);
+    public Review removeVote(@PathVariable long id, @PathVariable long userId) {
+        return reviewService.removeVote(id, userId);
     }
 }
