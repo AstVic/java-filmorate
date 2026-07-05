@@ -45,3 +45,13 @@ CREATE TABLE IF NOT EXISTS friendships (
     PRIMARY KEY (user_id, friend_id),
     CHECK (user_id <> friend_id)
 );
+CREATE TABLE IF NOT EXISTS directors (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS film_directors (
+    film_id BIGINT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+    director_id BIGINT NOT NULL REFERENCES directors(id) ON DELETE CASCADE,
+    PRIMARY KEY (film_id, director_id)
+);

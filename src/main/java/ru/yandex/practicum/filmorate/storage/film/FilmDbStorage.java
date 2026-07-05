@@ -14,6 +14,8 @@ import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.GenreRowMapper;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
+import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -77,6 +79,19 @@ public class FilmDbStorage implements FilmStorage {
             VALUES (?, ?)
             """;
     private static final String FIND_POPULAR_FILMS_QUERY = """
+    private static final String FIND_FILM_DIRECTORS_QUERY = """
+        SELECT d.id, d.name
+        FROM film_directors AS fd
+        JOIN directors AS d ON fd.director_id = d.id
+        WHERE fd.film_id = ?
+        ORDER BY d.id
+        """;
+    private static final String DELETE_FILM_DIRECTORS_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
+    private static final String INSERT_FILM_DIRECTOR_QUERY = """
+        INSERT INTO film_directors (film_id, director_id)
+        VALUES (?, ?)
+        """;
+    private static final String FIND_FILMS_BY_DIRECTOR_LIKES_QUERY = """
         SELECT f.id, f.name, f.description, f.release_date, f.duration,
                m.id AS mpa_id, m.rating, m.description AS mpa_description
         FROM films AS f
@@ -88,6 +103,20 @@ public class FilmDbStorage implements FilmStorage {
         GROUP BY f.id, m.id
         ORDER BY COUNT(l.user_id) DESC
         LIMIT ?
+        JOIN film_directors AS fd ON f.id = fd.film_id
+        LEFT JOIN likes AS l ON f.id = l.film_id
+        WHERE fd.director_id = ?
+        GROUP BY f.id, m.id
+        ORDER BY COUNT(l.user_id) DESC
+        """;
+    private static final String FIND_FILMS_BY_DIRECTOR_YEAR_QUERY = """
+        SELECT f.id, f.name, f.description, f.release_date, f.duration,
+               m.id AS mpa_id, m.rating, m.description AS mpa_description
+        FROM films AS f
+        JOIN mpa AS m ON f.mpa_id = m.id
+        JOIN film_directors AS fd ON f.id = fd.film_id
+        WHERE fd.director_id = ?
+        ORDER BY f.release_date
         """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -95,6 +124,7 @@ public class FilmDbStorage implements FilmStorage {
     private final GenreRowMapper genreRowMapper;
     private final GenreStorage genreStorage;
     private final MpaStorage mpaStorage;
+    private final DirectorDbStorage directorDbStorage;
 
     @Override
     public Film add(Film film) {
@@ -115,6 +145,7 @@ public class FilmDbStorage implements FilmStorage {
         film.setMpa(mpa);
         film.setGenres(resolveGenres(film));
         saveFilmGenres(film);
+        saveFilmDirectors(film);
         return findById(film.getId()).orElseThrow();
     }
 
@@ -133,6 +164,7 @@ public class FilmDbStorage implements FilmStorage {
         film.setMpa(mpa);
         film.setGenres(resolveGenres(film));
         saveFilmGenres(film);
+        saveFilmDirectors(film);
         return findById(film.getId()).orElseThrow();
     }
 
@@ -171,6 +203,7 @@ public class FilmDbStorage implements FilmStorage {
     private Film loadFilmRelations(Film film) {
         film.setLikes(findLikes(film.getId()));
         film.setGenres(findGenres(film.getId()));
+        film.setDirectors(new LinkedHashSet<>(directorDbStorage.findByFilmId(film.getId())));
         return film;
     }
 
@@ -215,6 +248,19 @@ public class FilmDbStorage implements FilmStorage {
                 FIND_POPULAR_FILMS_QUERY,
                 filmRowMapper,
                 genreId, genreId, year, year, count);
+
+    private void saveFilmDirectors(Film film) {
+        jdbcTemplate.update(DELETE_FILM_DIRECTORS_QUERY, film.getId());
+        if (film.getDirectors() != null) {
+            for (Director director : film.getDirectors()) {
+                jdbcTemplate.update(INSERT_FILM_DIRECTOR_QUERY, film.getId(), director.getId());
+            }
+        }
+    }
+
+    public Collection<Film> findByDirector(long directorId, String sortBy) {
+        String query = sortBy.equals("year") ? FIND_FILMS_BY_DIRECTOR_YEAR_QUERY : FIND_FILMS_BY_DIRECTOR_LIKES_QUERY;
+        Collection<Film> films = jdbcTemplate.query(query, filmRowMapper, directorId);
         films.forEach(this::loadFilmRelations);
         return films;
     }
