@@ -152,6 +152,31 @@ public class FilmDbStorage implements FilmStorage {
         ORDER BY COUNT(l.user_id) DESC
         """;
 
+    private static final String FIND_RECOMMENDATIONS_QUERY = """
+        WITH similar_user AS (
+            SELECT other_likes.user_id
+            FROM likes AS user_likes
+            JOIN likes AS other_likes ON user_likes.film_id = other_likes.film_id
+            WHERE user_likes.user_id = ?
+              AND other_likes.user_id <> ?
+            GROUP BY other_likes.user_id
+            ORDER BY COUNT(*) DESC, other_likes.user_id
+            LIMIT 1
+        )
+        SELECT f.id, f.name, f.description, f.release_date, f.duration,
+               m.id AS mpa_id, m.rating, m.description AS mpa_description
+        FROM films AS f
+        JOIN mpa AS m ON f.mpa_id = m.id
+        JOIN likes AS recommended_likes ON f.id = recommended_likes.film_id
+        JOIN similar_user ON recommended_likes.user_id = similar_user.user_id
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM likes AS user_likes
+            WHERE user_likes.film_id = f.id AND user_likes.user_id = ?
+        )
+        ORDER BY f.id
+        """;
+
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
     private final GenreRowMapper genreRowMapper;
@@ -229,6 +254,14 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Collection<Film> findAll() {
         Collection<Film> films = jdbcTemplate.query(FIND_ALL_FILMS_QUERY, filmRowMapper);
+        films.forEach(this::loadFilmRelations);
+        return films;
+    }
+
+    @Override
+    public Collection<Film> findRecommendations(long userId) {
+        Collection<Film> films = jdbcTemplate.query(
+                FIND_RECOMMENDATIONS_QUERY, filmRowMapper, userId, userId, userId);
         films.forEach(this::loadFilmRelations);
         return films;
     }

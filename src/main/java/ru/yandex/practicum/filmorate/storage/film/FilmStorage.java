@@ -19,4 +19,6 @@ public interface FilmStorage {
     Optional<Film> findById(long id);
 
     Collection<Film> findAll();
+
+    Collection<Film> findRecommendations(long userId);
 }

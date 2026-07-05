@@ -215,6 +215,43 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    void shouldRecommendFilmsLikedByUserWithMostCommonLikes() {
+        User target = userStorage.add(createUser("target", "target@mail.ru"));
+        User similar = userStorage.add(createUser("similar", "similar@mail.ru"));
+        User lessSimilar = userStorage.add(createUser("other", "other@mail.ru"));
+        Film commonOne = filmStorage.add(createFilm("Common one"));
+        Film commonTwo = filmStorage.add(createFilm("Common two"));
+        Film recommendation = filmStorage.add(createFilm("Recommendation"));
+        Film otherFilm = filmStorage.add(createFilm("Other film"));
+
+        filmStorage.addLike(commonOne.getId(), target.getId());
+        filmStorage.addLike(commonTwo.getId(), target.getId());
+        filmStorage.addLike(commonOne.getId(), similar.getId());
+        filmStorage.addLike(commonTwo.getId(), similar.getId());
+        filmStorage.addLike(recommendation.getId(), similar.getId());
+        filmStorage.addLike(commonOne.getId(), lessSimilar.getId());
+        filmStorage.addLike(otherFilm.getId(), lessSimilar.getId());
+
+        Collection<Film> recommendations = filmStorage.findRecommendations(target.getId());
+
+        assertThat(recommendations)
+                .extracting(Film::getId)
+                .containsExactly(recommendation.getId());
+    }
+
+    @Test
+    void shouldReturnNoRecommendationsWithoutCommonLikes() {
+        User target = userStorage.add(createUser("target", "target@mail.ru"));
+        User other = userStorage.add(createUser("other", "other@mail.ru"));
+        Film targetFilm = filmStorage.add(createFilm("Target film"));
+        Film otherFilm = filmStorage.add(createFilm("Other film"));
+        filmStorage.addLike(targetFilm.getId(), target.getId());
+        filmStorage.addLike(otherFilm.getId(), other.getId());
+
+        assertThat(filmStorage.findRecommendations(target.getId())).isEmpty();
+    }
+
+    @Test
     void shouldDeleteFilm() {
         Film film = filmStorage.add(createFilm("Film"));
 
