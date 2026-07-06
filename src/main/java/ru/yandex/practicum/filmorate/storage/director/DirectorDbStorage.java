@@ -45,15 +45,6 @@ public class DirectorDbStorage implements DirectorStorage {
             SELECT d.id, d.name
             FROM directors AS d
             JOIN film_directors AS fd ON d.id = fd.director_id
-    private static final String FIND_ALL_DIRECTORS_QUERY = "SELECT id, name FROM directors ORDER BY id";
-    private static final String FIND_DIRECTOR_BY_ID_QUERY = "SELECT id, name FROM directors WHERE id = ?";
-    private static final String INSERT_DIRECTOR_QUERY = "INSERT INTO directors (name) VALUES (?)";
-    private static final String UPDATE_DIRECTOR_QUERY = "UPDATE directors SET name = ? WHERE id = ?";
-    private static final String DELETE_DIRECTOR_QUERY = "DELETE FROM directors WHERE id = ?";
-    private static final String FIND_DIRECTORS_BY_FILM_ID_QUERY = """
-            SELECT d.id, d.name
-            FROM directors d
-            JOIN film_directors fd ON d.id = fd.director_id
             WHERE fd.film_id = ?
             ORDER BY d.id
             """;
@@ -106,6 +97,5 @@ public class DirectorDbStorage implements DirectorStorage {
         return jdbcTemplate.query(
                 FIND_DIRECTORS_BY_FILM_ID_QUERY,
                 directorRowMapper, filmId);
-        return jdbcTemplate.query(FIND_DIRECTORS_BY_FILM_ID_QUERY, directorRowMapper, filmId);
     }
 }
