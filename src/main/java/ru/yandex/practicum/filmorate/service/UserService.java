@@ -11,7 +11,6 @@ import ru.yandex.practicum.filmorate.model.EventOperation;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.event.EventStorage;
-import ru.yandex.practicum.filmorate.storage.event.NoOpEventStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.time.LocalDate;
@@ -28,10 +27,6 @@ public class UserService {
     public UserService(@Qualifier("userDbStorage") UserStorage userStorage, EventStorage eventStorage) {
         this.userStorage = userStorage;
         this.eventStorage = eventStorage;
-    }
-
-    public UserService(UserStorage userStorage) {
-        this(userStorage, new NoOpEventStorage());
     }
 
     public User create(User user) {

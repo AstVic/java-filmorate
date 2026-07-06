@@ -9,7 +9,6 @@ import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.EventOperation;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.storage.event.EventStorage;
-import ru.yandex.practicum.filmorate.storage.event.NoOpEventStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -32,10 +31,6 @@ public class ReviewService {
         this.userStorage = userStorage;
         this.filmStorage = filmStorage;
         this.eventStorage = eventStorage;
-    }
-
-    public ReviewService(ReviewStorage reviewStorage, UserStorage userStorage, FilmStorage filmStorage) {
-        this(reviewStorage, userStorage, filmStorage, new NoOpEventStorage());
     }
 
     public Review add(Review review) {
