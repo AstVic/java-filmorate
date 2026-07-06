@@ -1,10 +1,15 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.EventOperation;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
+import ru.yandex.practicum.filmorate.storage.event.NoOpEventStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
@@ -24,13 +29,21 @@ public class FilmService {
     private final FilmStorage filmStorage;
     private final UserStorage userStorage;
     private final DirectorDbStorage directorDbStorage;
+    private final EventStorage eventStorage;
 
+    @Autowired
     public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
                        @Qualifier("userDbStorage") UserStorage userStorage,
-                       DirectorDbStorage directorDbStorage) {
+                       DirectorDbStorage directorDbStorage,
+                       EventStorage eventStorage) {
         this.filmStorage = filmStorage;
         this.userStorage = userStorage;
         this.directorDbStorage = directorDbStorage;
+        this.eventStorage = eventStorage;
+    }
+
+    public FilmService(FilmStorage filmStorage, UserStorage userStorage, DirectorDbStorage directorDbStorage) {
+        this(filmStorage, userStorage, directorDbStorage, new NoOpEventStorage());
     }
 
     public Film create(Film film) {
@@ -63,22 +76,20 @@ public class FilmService {
     public Film addLike(long filmId, long userId) {
         getFilmOrThrow(filmId);
         validateUser(userId);
-        return filmStorage.addLike(filmId, userId);
+        Film film = filmStorage.addLike(filmId, userId);
+        eventStorage.add(userId, EventType.LIKE, EventOperation.ADD, filmId);
+        return film;
     }
 
     public Film removeLike(long filmId, long userId) {
         getFilmOrThrow(filmId);
         validateUser(userId);
-        return filmStorage.removeLike(filmId, userId);
+        Film film = filmStorage.removeLike(filmId, userId);
+        eventStorage.add(userId, EventType.LIKE, EventOperation.REMOVE, filmId);
+        return film;
     }
 
     public List<Film> getPopular(int count, Long genreId, Integer year) {
-        if (genreId == null && year == null) {
-            return filmStorage.findAll().stream()
-                    .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
-                    .limit(count)
-                    .collect(Collectors.toList());
-        }
         return ((FilmDbStorage) filmStorage).findPopular(count, genreId, year);
     }
 
@@ -93,6 +104,11 @@ public class FilmService {
                 .filter(film -> film.getLikes().contains(userId) && film.getLikes().contains(friendId))
                 .sorted(Comparator.comparingInt((Film film) -> film.getLikes().size()).reversed())
                 .collect(Collectors.toList());
+    }
+
+    public Collection<Film> getRecommendations(long userId) {
+        validateUser(userId);
+        return filmStorage.findRecommendations(userId);
     }
 
     public Collection<Film> getFilmsByDirector(long directorId, String sortBy) {
