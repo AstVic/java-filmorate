@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 class UserControllerTest {
 
@@ -22,8 +24,8 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         UserStorage userStorage = new InMemoryUserStorage();
-        UserService userService = new UserService(userStorage);
-        userController = new UserController(userService);
+        UserService userService = new UserService(userStorage, mock(EventStorage.class));
+        userController = new UserController(userService, null);
     }
 
     @Test

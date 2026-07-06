@@ -22,6 +22,8 @@ import ru.yandex.practicum.filmorate.storage.mapper.MpaRowMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.UserRowMapper;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
+import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
+import ru.yandex.practicum.filmorate.storage.mapper.DirectorRowMapper;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -35,7 +37,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @JdbcTest
 @AutoConfigureTestDatabase
 @Import({UserDbStorage.class, UserRowMapper.class, FilmDbStorage.class, FilmRowMapper.class,
-        GenreDbStorage.class, GenreRowMapper.class, MpaDbStorage.class, MpaRowMapper.class})
+        GenreDbStorage.class, GenreRowMapper.class, MpaDbStorage.class, MpaRowMapper.class,
+        DirectorDbStorage.class, DirectorRowMapper.class})
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 class FilmorateApplicationTests {
     private final UserDbStorage userStorage;
@@ -212,6 +215,43 @@ class FilmorateApplicationTests {
     }
 
     @Test
+    void shouldRecommendFilmsLikedByUserWithMostCommonLikes() {
+        User target = userStorage.add(createUser("target", "target@mail.ru"));
+        User similar = userStorage.add(createUser("similar", "similar@mail.ru"));
+        User lessSimilar = userStorage.add(createUser("other", "other@mail.ru"));
+        Film commonOne = filmStorage.add(createFilm("Common one"));
+        Film commonTwo = filmStorage.add(createFilm("Common two"));
+        Film recommendation = filmStorage.add(createFilm("Recommendation"));
+        Film otherFilm = filmStorage.add(createFilm("Other film"));
+
+        filmStorage.addLike(commonOne.getId(), target.getId());
+        filmStorage.addLike(commonTwo.getId(), target.getId());
+        filmStorage.addLike(commonOne.getId(), similar.getId());
+        filmStorage.addLike(commonTwo.getId(), similar.getId());
+        filmStorage.addLike(recommendation.getId(), similar.getId());
+        filmStorage.addLike(commonOne.getId(), lessSimilar.getId());
+        filmStorage.addLike(otherFilm.getId(), lessSimilar.getId());
+
+        Collection<Film> recommendations = filmStorage.findRecommendations(target.getId());
+
+        assertThat(recommendations)
+                .extracting(Film::getId)
+                .containsExactly(recommendation.getId());
+    }
+
+    @Test
+    void shouldReturnNoRecommendationsWithoutCommonLikes() {
+        User target = userStorage.add(createUser("target", "target@mail.ru"));
+        User other = userStorage.add(createUser("other", "other@mail.ru"));
+        Film targetFilm = filmStorage.add(createFilm("Target film"));
+        Film otherFilm = filmStorage.add(createFilm("Other film"));
+        filmStorage.addLike(targetFilm.getId(), target.getId());
+        filmStorage.addLike(otherFilm.getId(), other.getId());
+
+        assertThat(filmStorage.findRecommendations(target.getId())).isEmpty();
+    }
+
+    @Test
     void shouldDeleteFilm() {
         Film film = filmStorage.add(createFilm("Film"));
 
@@ -219,6 +259,42 @@ class FilmorateApplicationTests {
 
         assertThat(filmStorage.findById(film.getId())).isEmpty();
         assertThat(filmStorage.findAll()).isEmpty();
+    }
+
+    @Test
+    void shouldDeleteFilmWithLikesAndGenres() {
+        User user = userStorage.add(createUser("user-login", "user@mail.ru"));
+        Film film = createFilm("Film");
+        film.setGenres(Set.of(genre(1), genre(2)));
+        Film savedFilm = filmStorage.add(film);
+        filmStorage.addLike(savedFilm.getId(), user.getId());
+
+        filmStorage.delete(savedFilm.getId());
+
+        assertThat(filmStorage.findById(savedFilm.getId())).isEmpty();
+        assertThat(countRows("likes")).isZero();
+        assertThat(countRows("film_genres")).isZero();
+        assertThat(userStorage.findById(user.getId())).isPresent();
+    }
+
+    @Test
+    void shouldDeleteUserWithFriendshipsAndLikes() {
+        User user = userStorage.add(createUser("user-login", "user@mail.ru"));
+        User friend = userStorage.add(createUser("friend-login", "friend@mail.ru"));
+        user.setFriends(Map.of(friend.getId(), FriendshipStatus.UNCONFIRMED));
+        userStorage.update(user);
+        Film film = filmStorage.add(createFilm("Film"));
+        filmStorage.addLike(film.getId(), user.getId());
+
+        userStorage.delete(user.getId());
+
+        assertThat(userStorage.findById(user.getId())).isEmpty();
+        assertThat(userStorage.findById(friend.getId())).isPresent();
+        assertThat(countRows("friendships")).isZero();
+        assertThat(countRows("likes")).isZero();
+        assertThat(filmStorage.findById(film.getId()))
+                .isPresent()
+                .hasValueSatisfying(foundFilm -> assertThat(foundFilm.getLikes()).isEmpty());
     }
 
     @Test
@@ -278,5 +354,10 @@ class FilmorateApplicationTests {
         MPA mpa = new MPA();
         mpa.setId(id);
         return mpa;
+    }
+
+    private int countRows(String table) {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
+        return count == null ? 0 : count;
     }
 }

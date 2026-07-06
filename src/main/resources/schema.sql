@@ -45,3 +45,37 @@ CREATE TABLE IF NOT EXISTS friendships (
     PRIMARY KEY (user_id, friend_id),
     CHECK (user_id <> friend_id)
 );
+CREATE TABLE IF NOT EXISTS directors (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS film_directors (
+    film_id BIGINT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+    director_id BIGINT NOT NULL REFERENCES directors(id) ON DELETE CASCADE,
+    PRIMARY KEY (film_id, director_id)
+);
+
+CREATE TABLE IF NOT EXISTS events (
+    event_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    event_timestamp BIGINT NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_type VARCHAR(20) NOT NULL,
+    operation VARCHAR(20) NOT NULL,
+    entity_id BIGINT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    content TEXT NOT NULL,
+    is_positive BOOLEAN NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    film_id BIGINT NOT NULL REFERENCES films(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS review_votes (
+    review_id BIGINT NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    is_like BOOLEAN NOT NULL,
+    PRIMARY KEY (review_id, user_id)
+);

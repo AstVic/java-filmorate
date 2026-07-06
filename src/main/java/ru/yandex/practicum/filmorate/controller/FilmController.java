@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import java.util.Collection;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -48,8 +49,28 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
-        return filmService.getPopular(count);
+    public Collection<Film> getPopular(@RequestParam(defaultValue = "10") int count,
+                                       @RequestParam(required = false) Long genreId,
+                                       @RequestParam(required = false) Integer year) {
+        return filmService.getPopular(count, genreId, year);
+    }
+
+    @GetMapping("/search")
+    public List<Film> search(@RequestParam String query,
+                             @RequestParam List<String> by) {
+        return filmService.search(query, by);
+    }
+
+    @GetMapping("/common")
+    public Collection<Film> getCommonFilms(@RequestParam long userId, @RequestParam long friendId) {
+        return filmService.getCommonFilms(userId, friendId);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public Collection<Film> getFilmsByDirector(@PathVariable long directorId,
+                                               @RequestParam String sortBy) {
+        log.info("Получен запрос на фильмы режиссёра {} с сортировкой по {}", directorId, sortBy);
+        return filmService.getFilmsByDirector(directorId, sortBy);
     }
 
     @GetMapping("/{id}")

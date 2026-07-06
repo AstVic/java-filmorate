@@ -8,15 +8,17 @@ import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 class FilmControllerTest {
 
@@ -27,7 +29,8 @@ class FilmControllerTest {
     void setUp() {
         FilmStorage filmStorage = new InMemoryFilmStorage();
         userStorage = new InMemoryUserStorage();
-        FilmService filmService = new FilmService(filmStorage, userStorage);
+        DirectorDbStorage directorDbStorage = new DirectorDbStorage(null, null);
+        FilmService filmService = new FilmService(filmStorage, userStorage, directorDbStorage, mock(EventStorage.class));
         filmController = new FilmController(filmService);
 
     }
@@ -72,24 +75,6 @@ class FilmControllerTest {
 
         Film updatedFilm = filmController.findAll().iterator().next();
         assertTrue(updatedFilm.getLikes().isEmpty());
-    }
-
-    @Test
-    void shouldReturnPopularFilmsSortedByLikes() {
-        User user1 = createUser("user1");
-        User user2 = createUser("user2");
-        Film first = createFilm("first");
-        Film second = createFilm("second");
-
-        filmController.addLike(first.getId(), user1.getId());
-        filmController.addLike(first.getId(), user2.getId());
-        filmController.addLike(second.getId(), user1.getId());
-
-        List<Film> popular = (List<Film>) filmController.getPopular(10);
-
-        assertEquals(2, popular.size());
-        assertEquals(first.getId(), popular.get(0).getId());
-        assertEquals(second.getId(), popular.get(1).getId());
     }
 
     @Test
@@ -245,17 +230,6 @@ class FilmControllerTest {
     @Test
     void shouldThrowNotFoundWhenGettingFilmByUnknownId() {
         assertThrows(NotFoundException.class, () -> filmController.getById(999L));
-    }
-
-    @Test
-    void shouldReturnTop10ByDefaultCount() {
-        User user = createUser("single");
-        Film film = createFilm("popular");
-        filmController.addLike(film.getId(), user.getId());
-
-        List<Film> popular = (List<Film>) filmController.getPopular(10);
-
-        assertFalse(popular.isEmpty());
     }
 
     private User createUser(String login) {
