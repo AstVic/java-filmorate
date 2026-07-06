@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.storage.event.EventStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
-import ru.yandex.practicum.filmorate.storage.film.FilmDbStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -85,11 +84,11 @@ public class FilmService {
     }
 
     public List<Film> getPopular(int count, Long genreId, Integer year) {
-        return ((FilmDbStorage) filmStorage).findPopular(count, genreId, year);
+        return filmStorage.findPopular(count, genreId, year);
     }
 
     public List<Film> search(String query, List<String> by) {
-        return ((FilmDbStorage) filmStorage).search(query, by);
+        return filmStorage.search(query, by);
     }
 
     public Collection<Film> getCommonFilms(long userId, long friendId) {
@@ -114,7 +113,7 @@ public class FilmService {
             throw new ValidationException("Параметр sortBy должен быть year или likes");
         }
 
-        return ((FilmDbStorage) filmStorage).findByDirector(directorId, sortBy);
+        return filmStorage.findByDirector(directorId, sortBy);
     }
 
     private Film getFilmOrThrow(long id) {

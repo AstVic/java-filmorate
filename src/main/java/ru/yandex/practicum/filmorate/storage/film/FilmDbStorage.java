@@ -310,6 +310,7 @@ public class FilmDbStorage implements FilmStorage {
                 .orElseThrow(() -> new NotFoundException("Рейтинг не найден"));
     }
 
+    @Override
     public List<Film> findPopular(int count, Long genreId, Integer year) {
         List<Film> films = jdbcTemplate.query(
                 FIND_POPULAR_FILMS_QUERY,
@@ -328,6 +329,7 @@ public class FilmDbStorage implements FilmStorage {
         }
     }
 
+    @Override
     public Collection<Film> findByDirector(long directorId, String sortBy) {
         String query = sortBy.equals("year") ? FIND_FILMS_BY_DIRECTOR_YEAR_QUERY : FIND_FILMS_BY_DIRECTOR_LIKES_QUERY;
         Collection<Film> films = jdbcTemplate.query(query, filmRowMapper, directorId);
@@ -335,6 +337,7 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
     public List<Film> search(String query, List<String> by) {
         String searchPattern = "%" + query + "%";
         String titlePattern = by.contains("title") ? searchPattern : "";
