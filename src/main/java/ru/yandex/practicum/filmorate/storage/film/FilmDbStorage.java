@@ -328,6 +328,7 @@ public class FilmDbStorage implements FilmStorage {
             }
         }
     }
+
     @Override
     public Collection<Film> findByDirector(long directorId, String sortBy) {
         String query = sortBy.equals("year") ? FIND_FILMS_BY_DIRECTOR_YEAR_QUERY : FIND_FILMS_BY_DIRECTOR_LIKES_QUERY;
