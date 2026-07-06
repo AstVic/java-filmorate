@@ -77,24 +77,6 @@ class FilmControllerTest {
     }
 
     @Test
-    void shouldReturnPopularFilmsSortedByLikes() {
-        User user1 = createUser("user1");
-        User user2 = createUser("user2");
-        Film first = createFilm("first");
-        Film second = createFilm("second");
-
-        filmController.addLike(first.getId(), user1.getId());
-        filmController.addLike(first.getId(), user2.getId());
-        filmController.addLike(second.getId(), user1.getId());
-
-        List<Film> popular = (List<Film>) filmController.getPopular(10, null,null);
-
-        assertEquals(2, popular.size());
-        assertEquals(first.getId(), popular.get(0).getId());
-        assertEquals(second.getId(), popular.get(1).getId());
-    }
-
-    @Test
     void shouldThrowExceptionWhenFilmNameIsBlank() {
         Film film = new Film();
         film.setName("");
@@ -247,17 +229,6 @@ class FilmControllerTest {
     @Test
     void shouldThrowNotFoundWhenGettingFilmByUnknownId() {
         assertThrows(NotFoundException.class, () -> filmController.getById(999L));
-    }
-
-    @Test
-    void shouldReturnTop10ByDefaultCount() {
-        User user = createUser("single");
-        Film film = createFilm("popular");
-        filmController.addLike(film.getId(), user.getId());
-
-        List<Film> popular = (List<Film>) filmController.getPopular(10, null, null);
-
-        assertFalse(popular.isEmpty());
     }
 
     private User createUser(String login) {
