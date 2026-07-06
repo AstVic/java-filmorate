@@ -25,44 +25,50 @@ public class ReviewController {
 
     @PostMapping
     public Review add(@RequestBody Review review) {
-        log.info("POST /reviews");
+        log.info("POST /reviews: {}", review);
         return reviewService.add(review);
     }
 
     @PutMapping
     public Review update(@RequestBody Review review) {
-        log.info("PUT /reviews");
+        log.info("PUT /reviews: {}", review);
         return reviewService.update(review);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable long id) {
+        log.info("DELETE /reviews/{}", id);
         reviewService.delete(id);
     }
 
     @GetMapping("/{id}")
     public Review getById(@PathVariable long id) {
+        log.info("GET /reviews/{}", id);
         return reviewService.getById(id);
     }
 
     @GetMapping
     public Collection<Review> findAll(@RequestParam(required = false) Long filmId,
                                       @RequestParam(defaultValue = "10") int count) {
+        log.info("GET /reviews?filmId={}&count={}", filmId, count);
         return reviewService.findAll(filmId, count);
     }
 
     @PutMapping("/{id}/like/{userId}")
     public void like(@PathVariable long id, @PathVariable long userId) {
+        log.info("PUT /reviews/{}/like/{}", id, userId);
         reviewService.addVote(id, userId, true);
     }
 
     @PutMapping("/{id}/dislike/{userId}")
     public void dislike(@PathVariable long id, @PathVariable long userId) {
+        log.info("PUT /reviews/{}/dislike/{}", id, userId);
         reviewService.addVote(id, userId, false);
     }
 
     @DeleteMapping({"/{id}/like/{userId}", "/{id}/dislike/{userId}"})
     public void removeVote(@PathVariable long id, @PathVariable long userId) {
+        log.info("DELETE /reviews/{}/like-or-dislike/{}", id, userId);
         reviewService.removeVote(id, userId);
     }
 }
