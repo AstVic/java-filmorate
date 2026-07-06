@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.List;
 
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
@@ -100,5 +101,20 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .orElse(0);
 
         return currentMaxId + 1;
+    }
+
+    @Override
+    public List<Film> findPopular(int count, Long genreId, Integer year) {
+        return List.of();
+    }
+
+    @Override
+    public List<Film> search(String query, List<String> by) {
+        return List.of();
+    }
+
+    @Override
+    public Collection<Film> findByDirector(long directorId, String sortBy) {
+        return List.of();
     }
 }
